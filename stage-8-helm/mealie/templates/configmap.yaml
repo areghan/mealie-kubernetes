@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mealie.fullname" . }}-config
+  namespace: {{ .Values.namespace }}
+data:
+  DB_ENGINE: "postgres"
+  POSTGRES_SERVER: "{{ include "mealie.fullname" . }}-postgres"
+  POSTGRES_PORT: "5432"

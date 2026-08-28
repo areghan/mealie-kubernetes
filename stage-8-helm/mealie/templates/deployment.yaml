@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mealie.fullname" . }}-postgres
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.postgres.replicaCount }}
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
+
+          ports:
+            - containerPort: 5432
+
+          envFrom:
+            - secretRef:
+                name: {{ include "mealie.fullname" . }}-postgres-secret
+
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-postgres-pvc" (include "mealie.fullname" .)) .Values.postgres.persistence.existingClaim }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mealie.fullname" . }}-app
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.mealie.replicaCount }}
+  selector:
+    matchLabels:
+      app: mealie
+  template:
+    metadata:
+      labels:
+        app: mealie
+    spec:
+      containers:
+        - name: mealie
+          image: "{{ .Values.mealie.image.repository }}:{{ .Values.mealie.image.tag }}"
+          imagePullPolicy: {{ .Values.mealie.image.pullPolicy }}
+
+          ports:
+            - containerPort: 9000
+
+          envFrom:
+            - configMapRef:
+                name: {{ include "mealie.fullname" . }}-config
+
+            - secretRef:
+                name: {{ include "mealie.fullname" . }}-postgres-secret
+
+          volumeMounts:
+            - name: mealie-data
+              mountPath: /app/data
+
+      volumes:
+        - name: mealie-data
+          emptyDir: {}
