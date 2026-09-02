@@ -16,7 +16,7 @@ spec:
         namespace: mealie-gitops
 
         mealie:
-          replica-count: 2
+          replicaCount: 2
           ingress:
             enabled: false
 
